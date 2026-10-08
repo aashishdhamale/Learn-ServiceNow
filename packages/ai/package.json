@@ -1,0 +1,17 @@
+{
+  "name": "@snow-mastery/ai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.132.1",
+    "@snow-mastery/grader": "workspace:*",
+    "zod": "^4.6.5"
+  }
+}

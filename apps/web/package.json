@@ -1,0 +1,33 @@
+{
+  "name": "@snow-mastery/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "dotenv -e ../../.env -- next dev",
+    "build": "dotenv -e ../../.env -- next build",
+    "start": "dotenv -e ../../.env -- next start",
+    "typecheck": "tsc -p tsconfig.json",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@snow-mastery/ai": "workspace:*",
+    "@snow-mastery/db": "workspace:*",
+    "@snow-mastery/grader": "workspace:*",
+    "@snow-mastery/scenarios": "workspace:*",
+    "@snow-mastery/snow-client": "workspace:*",
+    "next": "^16.4.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "dotenv-cli": "^11.0.0",
+    "postcss": "^8.5.29",
+    "tailwindcss": "^4.3.3"
+  }
+}

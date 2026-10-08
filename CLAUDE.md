@@ -3,8 +3,7 @@
 Guidance for Claude (and humans) working in this repo. Keep it current: update it in the
 same commit as any change to architecture, conventions, or commands.
 
-> **Status:** Phase 1 plan proposed, awaiting approval. Nothing below is implemented yet.
-> Sections marked _(pending)_ depend on open questions at the bottom.
+> **Status:** Phase 1 in progress — see milestones below.
 
 ## What this is
 
@@ -77,8 +76,16 @@ Dependency direction (no cycles): `web → db, grader, ai, snow-client, scenario
     UNREACHABLE | NOT_FOUND | AUTH_EXPIRED | MISSING_ACCESS | ATF_DISABLED`, each with an
     actionable message. Hibernation = redirect to developer.servicenow.com or HTML instead
     of JSON on an `/api/` path.
-11. **Learner identity** _(pending Q1)_: proposed single local learner behind a
-    `getCurrentUser()` seam so real auth drops in later.
+11. **Learner identity:** single local learner (no login) identified by
+    `LOCAL_LEARNER_EMAIL`, behind a `getCurrentUser()` seam so real auth drops in later.
+12. **Scenario contracts are prescribed.** Requirements name the Script Include, method and
+    scope (realistic spec; ATF needs a known name). Other artifacts (e.g. the client script)
+    are discovered by table/type/field plus a script reference.
+13. **ATF that can't run is BLOCKED, not skipped.** If the scenario defines a suite and it
+    can't run (ATF disabled, no runner, suite not imported, missing role), layer 3 is
+    `BLOCKED` with fix steps and the scenario stays incomplete.
+14. **Layer 4 runs automatically** on every check once layer 1 found scripts
+    (`AI_REVIEW_MODE=live|mock|off`). No per-learner cap in Phase 1.
 
 ## Data model (packages/db)
 
@@ -115,21 +122,35 @@ objectives + `Finding` history; cert tracker → objectives; simulator → `Scen
 - Link to ServiceNow docs; never copy documentation into the repo.
 - Commit after each working milestone with a descriptive message.
 
-## Commands _(planned)_
+## Commands
 
 ```
-pnpm install
+pnpm install          # also runs `prisma generate` (root postinstall)
 pnpm dev              # creates .env if missing, starts Postgres (docker compose), migrates, syncs scenarios, runs Next on :3000
 pnpm test             # Vitest across all packages
 pnpm test:e2e         # Playwright happy path (mock ServiceNow + mock AI)
 pnpm lint | pnpm typecheck | pnpm format
 pnpm db:migrate       # prisma migrate dev
 pnpm scenarios:validate
+pnpm scenarios:sync   # upsert scenario files into Scenario/ScenarioVersion rows
 ```
+
+Environment notes:
+- `pnpm dev` uses Docker for Postgres when available; with `SKIP_DOCKER=1` (or no Docker)
+  it uses `DATABASE_URL` as-is. Claude's cloud sandbox has no Docker daemon, so it runs the
+  system Postgres 16 (`pg_ctlcluster 16 main start`, role/password `snow`/`snow`).
+- Next.js 16 ships its own docs in `apps/web/node_modules/next/dist/docs/` — read them
+  before using unfamiliar Next APIs (see `apps/web/AGENTS.md`).
+- shadcn/ui components live in `apps/web/components/ui/` as source. The shadcn registry is
+  not reachable from Claude's sandbox, so components there were written by hand; on a
+  normal machine `pnpm dlx shadcn@latest add <component>` works with `components.json`.
+- Prisma 7: datasource URL is in `packages/db/prisma.config.ts` (reads the root `.env`),
+  client is generated to `packages/db/src/generated/prisma` (git-ignored) and uses the
+  `@prisma/adapter-pg` driver adapter.
 
 ## Phase 1 milestones
 
-- [ ] M0 Scaffold: workspace, tooling, docker-compose, `.env.example`, Prisma schema + first migration
+- [x] M0 Scaffold: workspace, tooling, docker-compose, `.env.example`, Prisma schema + first migration
 - [ ] M1 `scenarios`: schema, loader, VIP caller alert content, correct/flawed fixtures, ATF setup
 - [ ] M2 `snow-client`: HTTP core, errors, retries, OAuth, Table API, CI/CD API, health classifier
 - [ ] M3 `grader` layers 1–2 (flawed fixture fails layer 2 with educational messages)
@@ -139,10 +160,3 @@ pnpm scenarios:validate
 - [ ] M7 web: Script Lab catalog, scenario page with hints, Check my work, per-layer results
 - [ ] M8 web: progress dashboard by module
 - [ ] M9 Playwright e2e, README PDI setup guide, Definition-of-Done pass
-
-## Open questions
-
-1. Learner identity / hosting for Phase 1.
-2. Prescribed artifact names in scenarios vs discovery.
-3. Completion rule when ATF can't run.
-4. When layer 4 runs (cost).

@@ -1,0 +1,242 @@
+// ServiceNow Architect Mastery — Phase 1 data model.
+// See CLAUDE.md "Data model" for how later features (release notes, knowledge graph,
+// flashcards, cert tracker, simulator) attach to these tables.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Module {
+  PLATFORM
+  ITSM
+  ITOM
+  HRSD
+  CSM
+  FSM
+  SPM
+  SECOPS
+  IRM
+}
+
+enum ScenarioKind {
+  SCRIPT_LAB
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum ConnectionStatus {
+  PENDING
+  CONNECTED
+  AUTH_EXPIRED
+}
+
+enum AttemptStatus {
+  QUEUED
+  RUNNING
+  PASSED
+  FAILED
+  ERROR
+}
+
+enum Layer {
+  STRUCTURE
+  STATIC
+  FUNCTIONAL
+  REVIEW
+}
+
+enum LayerStatus {
+  PENDING
+  RUNNING
+  PASSED
+  FAILED
+  BLOCKED
+  SKIPPED
+  ERROR
+}
+
+enum Severity {
+  ERROR
+  WARNING
+  INFO
+}
+
+enum ProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  displayName String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  pdiConnection PdiConnection?
+  attempts      Attempt[]
+  progress      ScenarioProgress[]
+}
+
+/// One PDI per learner in Phase 1. Secrets and tokens are AES-256-GCM ciphertext
+/// (see apps/web/lib/server/crypto.ts), never plaintext.
+model PdiConnection {
+  id                    String           @id @default(cuid())
+  userId                String           @unique
+  user                  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instanceName          String
+  clientId              String
+  clientSecretEnc       String
+  oauthScope            String?
+  accessTokenEnc        String?
+  refreshTokenEnc       String?
+  accessTokenExpiresAt  DateTime?
+  status                ConnectionStatus @default(PENDING)
+  /// Snapshot of the last health check (HealthReport from snow-client).
+  lastHealth            Json?
+  lastHealthAt          DateTime?
+  /// Release family detected from the instance (e.g. "zurich"); feeds release-notes later.
+  detectedRelease       String?
+  snowUserName          String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+}
+
+model Scenario {
+  id               String         @id
+  kind             ScenarioKind   @default(SCRIPT_LAB)
+  module           Module
+  title            String
+  difficulty       Difficulty
+  releaseFamily    String
+  currentVersion   Int
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  versions   ScenarioVersion[]
+  objectives ScenarioObjective[]
+  progress   ScenarioProgress[]
+}
+
+model ScenarioVersion {
+  id          String   @id @default(cuid())
+  scenarioId  String
+  scenario    Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  version     Int
+  contentHash String
+  /// Full parsed scenario definition at this version.
+  definition  Json
+  createdAt   DateTime @default(now())
+
+  attempts Attempt[]
+
+  @@unique([scenarioId, version])
+}
+
+/// Stable, cross-scenario learning objectives (future knowledge-graph nodes).
+model LearningObjective {
+  id        String   @id
+  title     String
+  module    Module
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  scenarios ScenarioObjective[]
+}
+
+model ScenarioObjective {
+  scenarioId  String
+  objectiveId String
+  scenario    Scenario          @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  objective   LearningObjective @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+
+  @@id([scenarioId, objectiveId])
+}
+
+model Attempt {
+  id                String          @id @default(cuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scenarioVersionId String
+  scenarioVersion   ScenarioVersion @relation(fields: [scenarioVersionId], references: [id])
+  status            AttemptStatus   @default(QUEUED)
+  instanceName      String
+  hintsRevealed     Int             @default(0)
+  errorMessage      String?
+  createdAt         DateTime        @default(now())
+  startedAt         DateTime?
+  finishedAt        DateTime?
+
+  layers LayerResult[]
+
+  @@index([userId, createdAt])
+  @@index([scenarioVersionId])
+}
+
+model LayerResult {
+  id         String      @id @default(cuid())
+  attemptId  String
+  attempt    Attempt     @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  layer      Layer
+  status     LayerStatus @default(PENDING)
+  summary    String?
+  /// Layer-specific payload (e.g. ATF per-test results, AI coaching feedback).
+  details    Json?
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  findings Finding[]
+
+  @@unique([attemptId, layer])
+}
+
+/// One row per check/rule outcome, so weak spots can be analysed across attempts later.
+model Finding {
+  id            String      @id @default(cuid())
+  layerResultId String
+  layerResult   LayerResult @relation(fields: [layerResultId], references: [id], onDelete: Cascade)
+  checkId       String
+  severity      Severity
+  passed        Boolean
+  title         String
+  message       String
+  why           String?
+  fix           String?
+  docsUrl       String?
+  targetAlias   String?
+  targetTable   String?
+  targetSysId   String?
+  targetName    String?
+  line          Int?
+  column        Int?
+  position      Int
+
+  @@index([checkId])
+  @@index([layerResultId])
+}
+
+model ScenarioProgress {
+  userId        String
+  scenarioId    String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scenario      Scenario       @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  status        ProgressStatus @default(NOT_STARTED)
+  attemptsCount Int            @default(0)
+  hintsRevealed Int            @default(0)
+  firstPassedAt DateTime?
+  lastAttemptAt DateTime?
+  updatedAt     DateTime       @updatedAt
+
+  @@id([userId, scenarioId])
+}

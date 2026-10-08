@@ -1,0 +1,19 @@
+{
+  "name": "@snow-mastery/grader",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@snow-mastery/scenarios": "workspace:*",
+    "@snow-mastery/snow-client": "workspace:*",
+    "acorn": "^8.19.0",
+    "acorn-walk": "^8.3.5",
+    "zod": "^4.6.5"
+  }
+}

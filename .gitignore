@@ -1,0 +1,22 @@
+node_modules/
+.pnpm-store/
+.env
+.env.*.local
+*.log
+.DS_Store
+
+# build output
+.next/
+dist/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# generated
+packages/db/src/generated/
+
+# test output
+coverage/
+apps/web/test-results/
+apps/web/playwright-report/
+apps/web/blob-report/
