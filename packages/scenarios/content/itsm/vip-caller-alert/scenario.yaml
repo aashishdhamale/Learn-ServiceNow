@@ -1,0 +1,215 @@
+# VIP caller alert — the first Script Lab scenario.
+# Schema: packages/scenarios/src/schema.ts. Bump `version` whenever grading-relevant content changes.
+id: vip-caller-alert
+version: 1
+title: VIP caller alert
+summary: >-
+  Warn service desk agents the moment they pick a VIP caller on an Incident, and tell them
+  who the caller's manager is, without freezing the form.
+module: ITSM
+difficulty: intermediate
+releaseFamily: zurich
+estimatedMinutes: 45
+
+requirement: |
+  **Context.** Acme's service desk takes calls from executives every day. Agents keep missing
+  that a caller is a VIP, and escalations land on the wrong desk. The service owner wants the
+  Incident form to tell agents immediately, and to name the caller's manager so the agent
+  can loop them in.
+
+  **Requirement.** When an agent selects a caller on an Incident, show a field message under
+  **Caller** if that user is a VIP, including their manager's name, for example
+  *"VIP caller. Manager: Alice Manager"*. The lookup must run on the server and be
+  **asynchronous**: the form must never freeze while it waits.
+
+  **Contract.** Another team will reuse the server side, so it is fixed:
+
+  - A **client-callable Script Include** named `VipCallerAjax` in the **Global** scope.
+  - A method `getVipInfo` that reads the parameter `sysparm_caller_id` and returns a JSON
+    string: `{"vip": true, "managerName": "Alice Manager"}` for a VIP, or `{"vip": false}`
+    when the user is not a VIP or does not exist. `managerName` is `""` when a VIP has no
+    manager.
+  - An **onChange Client Script** on `incident.caller_id` that calls it with `GlideAjax`
+    and `getXMLAnswer()`.
+
+  Build it in your PDI with ServiceNow's own tools, then come back and click
+  **Check my work**.
+
+acceptanceCriteria:
+  - Selecting a VIP caller shows a field message under Caller that includes the manager's name.
+  - Selecting a non-VIP caller, or clearing Caller, leaves no VIP message on the form.
+  - Nothing runs while the form is loading (the script respects `isLoading`).
+  - The server call is asynchronous (GlideAjax with getXMLAnswer); no getXMLWait, no GlideRecord in the browser, no synchronous g_form.getReference.
+  - VipCallerAjax is client callable, extends AbstractAjaxProcessor, and contains no hard-coded sys_ids.
+  - The ATF suite "Script Lab - VIP caller alert" passes in your PDI.
+
+objectives:
+  - id: platform.client-server.glideajax-async
+    title: Call server logic asynchronously from the client with GlideAjax and getXMLAnswer
+    module: PLATFORM
+  - id: platform.server.client-callable-script-include
+    title: Design a client-callable Script Include with a small, explicit contract
+    module: PLATFORM
+  - id: platform.client.onchange-patterns
+    title: Write onChange client scripts that respect isLoading and clean up their messages
+    module: PLATFORM
+  - id: platform.performance.no-synchronous-client-calls
+    title: Explain why synchronous client calls hurt agents and break in Workspace and Portal
+    module: PLATFORM
+
+hints:
+  - title: Start on the server
+    body: |
+      Create the Script Include first (System Definition > Script Includes > New). Name it
+      `VipCallerAjax` and tick **Client callable** (labelled *Glide AJAX enabled* on some
+      releases). Its prototype should be built with
+      `Object.extendsObject(AbstractAjaxProcessor, { ... })`.
+  - title: Read the parameter, return a string
+    body: |
+      Inside `getVipInfo`, read the caller with `this.getParameter('sysparm_caller_id')`,
+      look the user up, and `return JSON.stringify(result)`. Whatever the method returns is
+      exactly what `getXMLAnswer` hands to your client callback.
+  - title: The client side
+    body: |
+      In the onChange script: return early when `isLoading`, clear any previous message with
+      `g_form.hideFieldMsg('caller_id', true)`, and stop if the field is now empty. Then create
+      `new GlideAjax('VipCallerAjax')`, add `sysparm_name` = `getVipInfo` and
+      `sysparm_caller_id` = `newValue`, and call `getXMLAnswer(function (answer) { ... })`.
+      Parse the answer and call `g_form.showFieldMsg(...)` only for VIPs.
+  - title: Think beyond the classic UI
+    body: |
+      Agents increasingly work in Service Operations Workspace. Set the client script's
+      **UI Type** to **All**, and avoid anything that touches the DOM or blocks the browser.
+
+structureChecks:
+  - id: ajax-script-include
+    title: Client-callable Script Include VipCallerAjax
+    table: sys_script_include
+    match:
+      name: VipCallerAjax
+    expect:
+      - field: active
+        equals: true
+        message: VipCallerAjax exists but is inactive.
+        why: Inactive Script Includes can't be called, so GlideAjax gets no answer.
+      - field: client_callable
+        equals: true
+        message: VipCallerAjax is not client callable.
+        why: GlideAjax can only call Script Includes marked Client callable (Glide AJAX enabled).
+      - field: sys_scope
+        equals: global
+        message: VipCallerAjax is not in the Global scope.
+        why: The contract fixes the Global scope so other teams can call it as 'VipCallerAjax' without a scope prefix.
+    capture:
+      alias: ajaxInclude
+      scriptField: script
+      kind: server
+    notFoundHint: Create it under System Definition > Script Includes, named exactly VipCallerAjax.
+
+  - id: caller-onchange-client-script
+    title: onChange Client Script on incident.caller_id calling VipCallerAjax
+    table: sys_script_client
+    match:
+      table: incident
+      type: onChange
+      field_name: caller_id
+    scriptContains:
+      - VipCallerAjax
+    expect:
+      - field: active
+        equals: true
+        message: Your onChange client script is inactive.
+        why: Inactive client scripts never run on the form.
+      - field: ui_type
+        equals: '10'
+        severity: warning
+        message: UI Type is not set to All.
+        why: With UI Type Desktop the alert never fires in Service Operations Workspace, where many agents now work.
+    capture:
+      alias: onChangeScript
+      scriptField: script
+      kind: client
+    notFoundHint: >-
+      Create a Client Script on the Incident table, Type onChange, Field name Caller, whose
+      script calls GlideAjax('VipCallerAjax'). Out-of-box scripts on Caller (for example
+      "Highlight VIP Caller") don't count.
+
+staticRules:
+  - rule: require-new
+    id: uses-glideajax
+    target: onChangeScript
+    options:
+      constructor: GlideAjax
+      firstArgument: VipCallerAjax
+    message: The client script never creates new GlideAjax('VipCallerAjax').
+    why: GlideAjax is the supported way for a client script to ask a Script Include for data.
+    fix: "var ga = new GlideAjax('VipCallerAjax');"
+  - rule: require-call
+    id: uses-getxmlanswer
+    target: onChangeScript
+    options:
+      method: getXMLAnswer
+    message: The client script doesn't call getXMLAnswer().
+    why: >-
+      getXMLAnswer sends the request asynchronously and hands your callback just the answer
+      string, so the agent can keep working while the server responds.
+    fix: "ga.getXMLAnswer(function (answer) { /* parse and show the message */ });"
+  - rule: require-call
+    id: shows-field-message
+    target: onChangeScript
+    options:
+      method: showFieldMsg
+    message: The client script never calls g_form.showFieldMsg().
+    why: The requirement is a field message under Caller, not an alert or an info message at the top of the form.
+  - rule: require-call
+    id: clears-field-message
+    target: onChangeScript
+    severity: warning
+    options:
+      method: hideFieldMsg
+    message: The client script never clears an earlier message with g_form.hideFieldMsg().
+    why: If an agent switches from a VIP to a non-VIP caller, the old VIP message stays on screen and misleads them.
+  - rule: require-call
+    id: reads-caller-parameter
+    target: ajaxInclude
+    options:
+      method: getParameter
+      firstArgument: sysparm_caller_id
+    message: VipCallerAjax never reads this.getParameter('sysparm_caller_id').
+    why: The contract fixes the parameter name; other callers will send sysparm_caller_id.
+  - rule: ajax-contract
+    target: onChangeScript
+    options:
+      include: ajaxInclude
+
+architectRubric:
+  - id: contract
+    criterion: The client-server contract is explicit and small; only the data the UI needs crosses the wire, in a predictable JSON shape.
+  - id: security
+    criterion: The Script Include doesn't let any caller read arbitrary user data; it validates input and respects ACLs (for example GlideRecordSecure or canRead), or the design explains why that's acceptable.
+  - id: ux
+    criterion: The message is shown, replaced and cleared correctly (VIP, then non-VIP, then empty) and nothing flickers or runs on form load.
+  - id: workspace-ready
+    criterion: The solution works beyond the classic UI; UI Type All, no DOM manipulation, no synchronous calls.
+  - id: maintainability
+    criterion: Naming, structure and error handling would survive a handover; no hard-coded sys_ids or magic strings, and failure cases (bad JSON, missing user) are handled.
+  - id: performance
+    criterion: One round trip per change; the server avoids unnecessary queries (for example dot-walking to the manager instead of a second GlideRecord).
+
+functional:
+  suiteName: Script Lab - VIP caller alert
+  requiresClientRunner: false
+  setupGuide: atf/README.md
+  scripts:
+    - title: Run Server Side Script step
+      path: atf/server-contract-test.js
+
+docs:
+  - title: GlideAjax (client API reference)
+    url: https://www.servicenow.com/docs/r/api-reference/c_GlideAjaxAPI.html
+  - title: GlideForm (client API reference)
+    url: https://www.servicenow.com/docs/r/api-reference/c_GlideFormAPI.html
+  - title: Client Side Scripting, Go for GlideAjax with getXMLAnswer (community article)
+    url: https://www.servicenow.com/community/developer-articles/client-side-scripting-go-for-glideajax-with-getxmlanswer/ta-p/2324830
+  - title: CI/CD REST API (used to run your ATF suite)
+    url: https://www.servicenow.com/docs/r/api-reference/rest-apis/cicd-api.html

@@ -1,0 +1,29 @@
+description: >-
+  A common first attempt. It works in the classic UI but blocks the browser with getXMLWait()
+  and queries the database from the client with GlideRecord. Layer 2 must fail it.
+records:
+  - table: sys_script_include
+    fields:
+      sys_id: 5c2b0e1f8f3a4b6c9d0e1f2a3b4c5d6e
+      name: VipCallerAjax
+      api_name: global.VipCallerAjax
+      active: true
+      client_callable: true
+      access: package_private
+      sys_scope: global
+      sys_updated_on: '2026-10-01 10:15:00'
+    scripts:
+      script: VipCallerAjax.js
+  - table: sys_script_client
+    fields:
+      sys_id: 7a1e2d3c4b5a69788796a5b4c3d2e1f0
+      name: VIP caller alert
+      table: incident
+      type: onChange
+      field_name: caller_id
+      active: true
+      ui_type: '0'
+      sys_scope: global
+      sys_updated_on: '2026-10-01 10:30:00'
+    scripts:
+      script: vip-caller-alert.client.js
