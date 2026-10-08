@@ -2,3 +2,5 @@ pnpm-lock.yaml
 packages/db/src/generated/
 packages/db/prisma/migrations/
 .next/
+packages/scenarios/content/**/*.js
+apps/web/AGENTS.md

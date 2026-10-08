@@ -13,7 +13,10 @@ const FixtureFileSchema = z.object({
   records: z.array(
     z.object({
       table: z.string(),
-      fields: z.record(z.string(), z.union([z.string(), z.boolean(), z.number()]).transform(String)),
+      fields: z.record(
+        z.string(),
+        z.union([z.string(), z.boolean(), z.number()]).transform(String),
+      ),
       /** field name → script file (relative to the fixture directory) */
       scripts: z.record(z.string(), z.string()).default({}),
     }),
@@ -37,7 +40,9 @@ export function fixtureExists(scenario: LoadedScenario, variant: string): boolea
 
 export function loadFixture(scenario: LoadedScenario, variant: string): ScenarioFixture {
   const dir = join(scenario.sourceDir, 'fixtures', variant);
-  const parsed = FixtureFileSchema.parse(parseYaml(readFileSync(join(dir, 'records.yaml'), 'utf8')));
+  const parsed = FixtureFileSchema.parse(
+    parseYaml(readFileSync(join(dir, 'records.yaml'), 'utf8')),
+  );
   return {
     variant,
     description: parsed.description,

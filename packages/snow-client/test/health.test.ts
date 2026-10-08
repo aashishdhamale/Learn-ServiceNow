@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { checkConnection, createSnowClient } from '../src';
-import { FakeInstance, recordingSleep, staticTokens, type FakeInstanceOptions } from '../src/testing';
+import {
+  FakeInstance,
+  recordingSleep,
+  staticTokens,
+  type FakeInstanceOptions,
+} from '../src/testing';
 
 const requiredTables = ['sys_script_client', 'sys_script_include'];
 const scripts = [
@@ -54,7 +59,9 @@ describe('checkConnection', () => {
   });
 
   it('is DEGRADED when the user cannot run ATF through the CI/CD API', async () => {
-    const report = await check({ user: { sysId: 'u1', userName: 'beth', name: 'Beth', roles: ['itil'] } });
+    const report = await check({
+      user: { sysId: 'u1', userName: 'beth', name: 'Beth', roles: ['itil'] },
+    });
     expect(report.status).toBe('DEGRADED');
     expect(report.checks.find((c) => c.id === 'cicd-role')).toMatchObject({
       status: 'fail',
@@ -65,14 +72,20 @@ describe('checkConnection', () => {
   it('is DEGRADED when ATF execution is disabled', async () => {
     const report = await check({ properties: { 'sn_atf.runner.enabled': 'false' } });
     expect(report.status).toBe('DEGRADED');
-    expect(report.checks.find((c) => c.id === 'atf-enabled')?.action).toMatch(/Enable test\/test suite execution/);
+    expect(report.checks.find((c) => c.id === 'atf-enabled')?.action).toMatch(
+      /Enable test\/test suite execution/,
+    );
   });
 
   it('maps an unknown instance to INSTANCE_NOT_FOUND', async () => {
     const dnsFailure = async () => {
       throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'ENOTFOUND' } });
     };
-    const client = createSnowClient({ instance: 'nope', tokens: staticTokens(), fetch: dnsFailure });
+    const client = createSnowClient({
+      instance: 'nope',
+      tokens: staticTokens(),
+      fetch: dnsFailure,
+    });
     const report = await checkConnection(client, { requiredTables });
     expect(report.status).toBe('INSTANCE_NOT_FOUND');
     expect(report.action).toMatch(/instance name/);

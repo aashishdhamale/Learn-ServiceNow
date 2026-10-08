@@ -120,9 +120,7 @@ export const ScenarioSchema = z
     /** Default rules (applied by script kind) to switch off for this scenario. */
     disabledDefaultRules: z.array(z.string()).default([]),
     functional: FunctionalSchema.optional(),
-    architectRubric: z
-      .array(z.object({ id: Slug, criterion: z.string().min(1) }))
-      .min(1),
+    architectRubric: z.array(z.object({ id: Slug, criterion: z.string().min(1) })).min(1),
     docs: z.array(z.object({ title: z.string().min(1), url: z.url() })).default([]),
   })
   .superRefine((scenario, ctx) => {
@@ -148,9 +146,21 @@ export const ScenarioSchema = z
         });
       }
     });
-    reportDuplicates(ctx, 'structureChecks', scenario.structureChecks.map((c) => c.id));
-    reportDuplicates(ctx, 'objectives', scenario.objectives.map((o) => o.id));
-    reportDuplicates(ctx, 'architectRubric', scenario.architectRubric.map((r) => r.id));
+    reportDuplicates(
+      ctx,
+      'structureChecks',
+      scenario.structureChecks.map((c) => c.id),
+    );
+    reportDuplicates(
+      ctx,
+      'objectives',
+      scenario.objectives.map((o) => o.id),
+    );
+    reportDuplicates(
+      ctx,
+      'architectRubric',
+      scenario.architectRubric.map((r) => r.id),
+    );
   });
 
 export type Scenario = z.infer<typeof ScenarioSchema>;
@@ -163,7 +173,8 @@ export interface LoadedScenario extends Scenario {
 function reportDuplicates(ctx: z.RefinementCtx, path: string, ids: string[]) {
   const seen = new Set<string>();
   for (const id of ids) {
-    if (seen.has(id)) ctx.addIssue({ code: 'custom', path: [path], message: `duplicate id "${id}"` });
+    if (seen.has(id))
+      ctx.addIssue({ code: 'custom', path: [path], message: `duplicate id "${id}"` });
     seen.add(id);
   }
 }

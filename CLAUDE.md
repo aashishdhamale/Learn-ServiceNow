@@ -73,7 +73,7 @@ Dependency direction (no cycles): `web → db, grader, ai, snow-client, scenario
    validated against `^[a-z0-9-]+$` (prevents SSRF via user input). Tests/e2e may set
    `SNOW_INSTANCE_URL_TEMPLATE` to point at the mock server.
 10. **Health check is a pure classifier** over probe results → `OK | HIBERNATING |
-    UNREACHABLE | NOT_FOUND | AUTH_EXPIRED | MISSING_ACCESS | ATF_DISABLED`, each with an
+UNREACHABLE | NOT_FOUND | AUTH_EXPIRED | MISSING_ACCESS | ATF_DISABLED`, each with an
     actionable message. Hibernation = redirect to developer.servicenow.com or HTML instead
     of JSON on an `/api/` path.
 11. **Learner identity:** single local learner (no login) identified by
@@ -89,17 +89,17 @@ Dependency direction (no cycles): `web → db, grader, ai, snow-client, scenario
 
 ## Data model (packages/db)
 
-| Model | Purpose |
-|---|---|
-| `User` | Learner |
-| `PdiConnection` | instance, client ID, encrypted secret/tokens, expiry, status, last health result, detected release |
-| `Scenario` | id (slug), kind (`SCRIPT_LAB` now; simulator/review-board later), module, title, difficulty, release family |
-| `ScenarioVersion` | version, content hash, full definition snapshot (JSON) |
-| `LearningObjective` + `ScenarioObjective` | stable objective ids — future knowledge-graph nodes, flashcard and cert-tracker anchors |
-| `Attempt` | user × scenario version, status, timestamps, hints used, instance snapshot |
-| `LayerResult` | attempt × layer (STRUCTURE, STATIC, FUNCTIONAL, REVIEW), status, summary, details JSON, timings |
-| `Finding` | one row per check/rule outcome (rule id, severity, message, record ref, line/col) — enables "weak spots" analytics later |
-| `ScenarioProgress` | user × scenario rollup for the dashboard (status, attempts, first passed, hints revealed) |
+| Model                                     | Purpose                                                                                                                  |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `User`                                    | Learner                                                                                                                  |
+| `PdiConnection`                           | instance, client ID, encrypted secret/tokens, expiry, status, last health result, detected release                       |
+| `Scenario`                                | id (slug), kind (`SCRIPT_LAB` now; simulator/review-board later), module, title, difficulty, release family              |
+| `ScenarioVersion`                         | version, content hash, full definition snapshot (JSON)                                                                   |
+| `LearningObjective` + `ScenarioObjective` | stable objective ids — future knowledge-graph nodes, flashcard and cert-tracker anchors                                  |
+| `Attempt`                                 | user × scenario version, status, timestamps, hints used, instance snapshot                                               |
+| `LayerResult`                             | attempt × layer (STRUCTURE, STATIC, FUNCTIONAL, REVIEW), status, summary, details JSON, timings                          |
+| `Finding`                                 | one row per check/rule outcome (rule id, severity, message, record ref, line/col) — enables "weak spots" analytics later |
+| `ScenarioProgress`                        | user × scenario rollup for the dashboard (status, attempts, first passed, hints revealed)                                |
 
 Out-of-scope features attach to these: release notes → `releaseFamily` + objectives;
 knowledge graph → edges between `LearningObjective`s; flashcards/spaced repetition →
@@ -136,6 +136,7 @@ pnpm scenarios:sync   # upsert scenario files into Scenario/ScenarioVersion rows
 ```
 
 Environment notes:
+
 - `pnpm dev` uses Docker for Postgres when available; with `SKIP_DOCKER=1` (or no Docker)
   it uses `DATABASE_URL` as-is. Claude's cloud sandbox has no Docker daemon, so it runs the
   system Postgres 16 (`pg_ctlcluster 16 main start`, role/password `snow`/`snow`).

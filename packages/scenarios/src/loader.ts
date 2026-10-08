@@ -79,4 +79,3 @@ function assertUniqueIds(scenarios: LoadedScenario[]) {
     seen.set(s.id, s.sourceDir);
   }
 }
-

@@ -24,8 +24,14 @@ export function ensureEnv() {
     console.log('• Generated TOKEN_ENCRYPTION_KEY in .env');
   }
   const final = parseEnvFile(envPath);
-  if (final.AI_REVIEW_MODE !== 'mock' && final.AI_REVIEW_MODE !== 'off' && !final.ANTHROPIC_API_KEY) {
-    console.log('• ANTHROPIC_API_KEY is empty: layer 4 (architect review) will be skipped until you set it.');
+  if (
+    final.AI_REVIEW_MODE !== 'mock' &&
+    final.AI_REVIEW_MODE !== 'off' &&
+    !final.ANTHROPIC_API_KEY
+  ) {
+    console.log(
+      '• ANTHROPIC_API_KEY is empty: layer 4 (architect review) will be skipped until you set it.',
+    );
   }
   return final;
 }

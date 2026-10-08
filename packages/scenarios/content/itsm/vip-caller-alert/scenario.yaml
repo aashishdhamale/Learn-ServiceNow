@@ -153,7 +153,7 @@ staticRules:
     why: >-
       getXMLAnswer sends the request asynchronously and hands your callback just the answer
       string, so the agent can keep working while the server responds.
-    fix: "ga.getXMLAnswer(function (answer) { /* parse and show the message */ });"
+    fix: 'ga.getXMLAnswer(function (answer) { /* parse and show the message */ });'
   - rule: require-call
     id: shows-field-message
     target: onChangeScript

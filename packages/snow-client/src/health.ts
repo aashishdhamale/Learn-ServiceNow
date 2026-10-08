@@ -47,7 +47,10 @@ const CICD_ROLES = ['admin', 'sn_cicd.sys_ci_automation'];
 const ATF_PROPERTY = 'sn_atf.runner.enabled';
 const BUILD_PROPERTY = 'glide.buildname';
 
-export async function checkConnection(client: SnowClient, options: HealthCheckOptions): Promise<HealthReport> {
+export async function checkConnection(
+  client: SnowClient,
+  options: HealthCheckOptions,
+): Promise<HealthReport> {
   const checkedAt = (options.now?.() ?? new Date()).toISOString();
   const checks: HealthCheckItem[] = [];
 
@@ -57,12 +60,19 @@ export async function checkConnection(client: SnowClient, options: HealthCheckOp
   } catch (error) {
     return failedReachability(error, client.instance, checkedAt);
   }
-  checks.push({ id: 'instance', label: 'Instance reachable', status: 'ok', message: `${client.instance} is awake.` });
+  checks.push({
+    id: 'instance',
+    label: 'Instance reachable',
+    status: 'ok',
+    message: `${client.instance} is awake.`,
+  });
   checks.push({
     id: 'auth',
     label: 'Signed in',
     status: 'ok',
-    message: user ? `Connected as ${user.name || user.userName}.` : 'Connected (could not identify the user).',
+    message: user
+      ? `Connected as ${user.name || user.userName}.`
+      : 'Connected (could not identify the user).',
   });
 
   const tableCheck = await checkTables(client, options.requiredTables);
@@ -90,7 +100,8 @@ export async function checkConnection(client: SnowClient, options: HealthCheckOp
             label: 'Can run ATF suites (CI/CD API)',
             status: 'fail',
             message: 'Your user has neither admin nor sn_cicd.sys_ci_automation.',
-            action: 'Grant sn_cicd.sys_ci_automation to your user, or connect as the PDI admin user.',
+            action:
+              'Grant sn_cicd.sys_ci_automation to your user, or connect as the PDI admin user.',
           },
   );
 
@@ -150,7 +161,8 @@ async function checkTables(client: SnowClient, tables: string[]): Promise<Health
       label: 'Can read your scripts',
       status: 'fail',
       message: `Access denied to: ${forbidden.join(', ')}.`,
-      action: 'Connect as a user with the admin role so the Script Lab can read your configuration.',
+      action:
+        'Connect as a user with the admin role so the Script Lab can read your configuration.',
     };
   }
   if (empty.length > 0) {
@@ -161,13 +173,20 @@ async function checkTables(client: SnowClient, tables: string[]): Promise<Health
       message: `No records visible in: ${empty.join(', ')}. Your user may lack read access.`,
     };
   }
-  return { id: 'tables', label: 'Can read your scripts', status: 'ok', message: `Read access to ${tables.length} table(s).` };
+  return {
+    id: 'tables',
+    label: 'Can read your scripts',
+    status: 'ok',
+    message: `Read access to ${tables.length} table(s).`,
+  };
 }
 
 async function readProperties(client: SnowClient): Promise<Record<string, string>> {
   try {
     const rows = await client.table.list('sys_properties', {
-      query: encodedQuery([{ field: 'name', operator: 'IN', value: [ATF_PROPERTY, BUILD_PROPERTY] }]),
+      query: encodedQuery([
+        { field: 'name', operator: 'IN', value: [ATF_PROPERTY, BUILD_PROPERTY] },
+      ]),
       fields: ['name', 'value'],
       limit: 10,
     });
@@ -190,17 +209,25 @@ function atfCheck(value: string | undefined): HealthCheckItem {
     };
   }
   if (value === 'true') return { ...base, status: 'ok', message: 'ATF can run tests.' };
-  return { ...base, status: 'warn', message: `Could not read ${ATF_PROPERTY}; layer 3 will tell you if ATF is off.` };
+  return {
+    ...base,
+    status: 'warn',
+    message: `Could not read ${ATF_PROPERTY}; layer 3 will tell you if ATF is off.`,
+  };
 }
 
 function overallStatus(checks: HealthCheckItem[]): HealthStatus {
-  const failed = (id: HealthCheckItem['id']) => checks.some((c) => c.id === id && c.status === 'fail');
+  const failed = (id: HealthCheckItem['id']) =>
+    checks.some((c) => c.id === id && c.status === 'fail');
   if (failed('tables')) return 'MISSING_ACCESS';
   if (failed('cicd-role') || failed('atf-enabled')) return 'DEGRADED';
   return 'OK';
 }
 
-function headlineFor(status: HealthStatus, instance: string): { headline: string; action?: string } {
+function headlineFor(
+  status: HealthStatus,
+  instance: string,
+): { headline: string; action?: string } {
   switch (status) {
     case 'OK':
       return { headline: `${instance} is connected and ready for the Script Lab.` };

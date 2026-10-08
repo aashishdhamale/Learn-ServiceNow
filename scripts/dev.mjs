@@ -23,14 +23,25 @@ const env = ensureEnv();
 if (env.SKIP_DOCKER === '1') {
   console.log('• SKIP_DOCKER=1: using DATABASE_URL as-is');
 } else if (dockerAvailable()) {
-  run('docker', ['compose', 'up', '-d', '--wait', 'postgres'], 'Starting Postgres (docker compose)');
+  run(
+    'docker',
+    ['compose', 'up', '-d', '--wait', 'postgres'],
+    'Starting Postgres (docker compose)',
+  );
 } else {
   console.log('• Docker not found: using DATABASE_URL as-is (set SKIP_DOCKER=1 to silence this)');
 }
 
 run('pnpm', ['--filter', '@snow-mastery/db', 'migrate:deploy'], 'Applying database migrations');
-run('pnpm', ['--filter', '@snow-mastery/db', 'scenarios:sync'], 'Syncing scenarios into the database');
+run(
+  'pnpm',
+  ['--filter', '@snow-mastery/db', 'scenarios:sync'],
+  'Syncing scenarios into the database',
+);
 
-const web = spawn('pnpm', ['--filter', '@snow-mastery/web', 'dev'], { cwd: root, stdio: 'inherit' });
+const web = spawn('pnpm', ['--filter', '@snow-mastery/web', 'dev'], {
+  cwd: root,
+  stdio: 'inherit',
+});
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => web.kill(signal));
 web.on('exit', (code) => process.exit(code ?? 0));

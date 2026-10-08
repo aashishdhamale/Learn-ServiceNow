@@ -85,7 +85,9 @@ architectRubric: [{ id: one, criterion: c }]
   });
 
   it('rejects static rules that target an alias nobody captures', () => {
-    const file = writeScenario(`${minimal}staticRules:\n  - { rule: require-call, target: missing }\n`);
+    const file = writeScenario(
+      `${minimal}staticRules:\n  - { rule: require-call, target: missing }\n`,
+    );
     expect(() => loadScenarioFile(file)).toThrow(ScenarioValidationError);
     expect(() => loadScenarioFile(file)).toThrow(/unknown target "missing"/);
   });

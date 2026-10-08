@@ -44,7 +44,10 @@ export interface AtfTestResult {
 
 const Link = z.object({ id: z.string().optional(), url: z.string().optional() }).loose();
 const StringValue = z.union([z.string(), z.number()]).transform(String);
-const Count = z.union([z.number(), z.string()]).optional().transform((v) => Number(v ?? 0) || 0);
+const Count = z
+  .union([z.number(), z.string()])
+  .optional()
+  .transform((v) => Number(v ?? 0) || 0);
 
 const ProgressResponse = z.object({
   result: z

@@ -134,7 +134,14 @@ export class SnowHttp {
     const contentType = response.headers.get('content-type') ?? '';
     const text = await response.text();
 
-    if (looksLikeHibernation({ status: response.status, location: response.headers.get('location'), contentType, body: text })) {
+    if (
+      looksLikeHibernation({
+        status: response.status,
+        location: response.headers.get('location'),
+        contentType,
+        body: text,
+      })
+    ) {
       throw new SnowHibernatingError({ status: response.status });
     }
     if (response.status >= 300 && response.status < 400) {
@@ -147,15 +154,22 @@ export class SnowHttp {
     const json = parseJson(text, contentType);
     if (!response.ok) throw errorForStatus(response, json, text);
     if (json === undefined) {
-      throw new SnowInvalidResponseError(`Expected JSON from ${spec.path} but got ${contentType || 'no content type'}.`, {
-        status: response.status,
-      });
+      throw new SnowInvalidResponseError(
+        `Expected JSON from ${spec.path} but got ${contentType || 'no content type'}.`,
+        {
+          status: response.status,
+        },
+      );
     }
 
     const parsed = spec.schema.safeParse(json);
     if (!parsed.success) {
-      const issues = parsed.error.issues.slice(0, 3).map((i) => `${i.path.join('.')}: ${i.message}`);
-      throw new SnowInvalidResponseError(`Unexpected response shape from ${spec.path}.`, { detail: issues.join('; ') });
+      const issues = parsed.error.issues
+        .slice(0, 3)
+        .map((i) => `${i.path.join('.')}: ${i.message}`);
+      throw new SnowInvalidResponseError(`Unexpected response shape from ${spec.path}.`, {
+        detail: issues.join('; '),
+      });
     }
     return parsed.data;
   }
@@ -204,7 +218,8 @@ function serviceNowErrorMessage(json: unknown): { message?: string; detail?: str
   // CI/CD API errors use {"result": {"error": "...", "status_message": "..."}}.
   const result = (json as { result?: { error?: unknown; status_message?: unknown } }).result;
   if (result && typeof result === 'object') {
-    const message = typeof result.error === 'string' && result.error ? result.error : result.status_message;
+    const message =
+      typeof result.error === 'string' && result.error ? result.error : result.status_message;
     return { message: typeof message === 'string' ? message : undefined };
   }
   return {};
@@ -239,7 +254,10 @@ function oauthErrorBody(json: unknown): { error: string; description?: string } 
   if (!json || typeof json !== 'object') return undefined;
   const { error, error_description } = json as { error?: unknown; error_description?: unknown };
   if (typeof error !== 'string') return undefined;
-  return { error, description: typeof error_description === 'string' ? error_description : undefined };
+  return {
+    error,
+    description: typeof error_description === 'string' ? error_description : undefined,
+  };
 }
 
 function retryAfterMs(header: string | null): number | undefined {
@@ -254,10 +272,14 @@ function networkError(error: unknown, url: string, timeoutMs: number): SnowError
   if (error instanceof SnowError) return error;
   const name = (error as { name?: string })?.name;
   if (name === 'TimeoutError' || name === 'AbortError') return new SnowTimeoutError(timeoutMs);
-  const code = (error as { cause?: { code?: string } })?.cause?.code ?? (error as { code?: string })?.code;
+  const code =
+    (error as { cause?: { code?: string } })?.cause?.code ?? (error as { code?: string })?.code;
   const host = safeHost(url);
   if (code === 'ENOTFOUND') return new SnowInstanceNotFoundError(host, error);
-  return new SnowUnreachableError(`Could not connect to ${host}${code ? ` (${code})` : ''}.`, error);
+  return new SnowUnreachableError(
+    `Could not connect to ${host}${code ? ` (${code})` : ''}.`,
+    error,
+  );
 }
 
 function safeHost(url: string): string {

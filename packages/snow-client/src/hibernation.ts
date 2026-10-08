@@ -16,7 +16,10 @@ const HIBERNATION_TEXT =
 
 export function looksLikeHibernation(response: RawResponseInfo): boolean {
   if (response.status >= 300 && response.status < 400) {
-    return Boolean(response.location && (PORTAL_HOST.test(response.location) || /hibernat/i.test(response.location)));
+    return Boolean(
+      response.location &&
+      (PORTAL_HOST.test(response.location) || /hibernat/i.test(response.location)),
+    );
   }
   const isHtml = (response.contentType ?? '').includes('text/html');
   if (!isHtml || !response.body) return false;

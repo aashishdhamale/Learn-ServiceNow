@@ -65,7 +65,10 @@ export class FakeInstance {
   private readonly options: FakeInstanceOptions;
   private readonly validTokens: Set<string>;
   private readonly refreshTokens = new Set<string>();
-  private readonly authCodes = new Map<string, { clientId: string; redirectUri: string; challenge: string }>();
+  private readonly authCodes = new Map<
+    string,
+    { clientId: string; redirectUri: string; challenge: string }
+  >();
   private readonly runs = new Map<string, Run>();
   private readonly queued: Array<{ pathPrefix: string; response: () => Response }> = [];
   private counter = 0;
@@ -98,7 +101,10 @@ export class FakeInstance {
   async handle(request: Request): Promise<Response> {
     const url = new URL(request.url);
     // Instance URL templates may prefix the path with /<instance>; strip it.
-    const path = url.pathname.replace(/^\/[a-z0-9-]+(?=\/(api|oauth_auth\.do|oauth_token\.do))/, '');
+    const path = url.pathname.replace(
+      /^\/[a-z0-9-]+(?=\/(api|oauth_auth\.do|oauth_token\.do))/,
+      '',
+    );
     this.requests.push({ method: request.method, path, search: url.search });
 
     const queuedIndex = this.queued.findIndex((q) => path.startsWith(q.pathPrefix));
@@ -122,30 +128,47 @@ export class FakeInstance {
     if (path === '/oauth_token.do' && request.method === 'POST') return this.token(request);
 
     if (!this.isAuthorized(request)) {
-      return json(401, { error: { message: 'User Not Authenticated', detail: 'Required to provide Auth information' }, status: 'failure' });
+      return json(401, {
+        error: {
+          message: 'User Not Authenticated',
+          detail: 'Required to provide Auth information',
+        },
+        status: 'failure',
+      });
     }
 
     const tableMatch = /^\/api\/now\/table\/([a-z0-9_]+)$/.exec(path);
     if (tableMatch && request.method === 'GET') return this.table(tableMatch[1]!, url.searchParams);
-    if (path === '/api/sn_cicd/testsuite/run' && request.method === 'POST') return this.runSuite(url.searchParams);
+    if (path === '/api/sn_cicd/testsuite/run' && request.method === 'POST')
+      return this.runSuite(url.searchParams);
     const progressMatch = /^\/api\/sn_cicd\/progress\/([^/]+)$/.exec(path);
     if (progressMatch) return this.progress(decodeURIComponent(progressMatch[1]!));
     const resultsMatch = /^\/api\/sn_cicd\/testsuite\/results\/([^/]+)$/.exec(path);
     if (resultsMatch) return this.results(decodeURIComponent(resultsMatch[1]!));
 
-    return json(400, { error: { message: `Requested URI does not represent any resource: ${path}` }, status: 'failure' });
+    return json(400, {
+      error: { message: `Requested URI does not represent any resource: ${path}` },
+      status: 'failure',
+    });
   }
 
   private baselineRecords() {
     const user = this.user;
     const rows: Array<{ table: string; fields: Record<string, string> }> = [
-      { table: 'sys_user', fields: { sys_id: user.sysId, user_name: user.userName, name: user.name } },
+      {
+        table: 'sys_user',
+        fields: { sys_id: user.sysId, user_name: user.userName, name: user.name },
+      },
       ...user.roles.map((role, i) => ({
         table: 'sys_user_has_role',
         fields: { sys_id: `role${i}`, user: user.sysId, 'role.name': role, state: 'active' },
       })),
     ];
-    const properties = { 'sn_atf.runner.enabled': 'true', 'glide.buildname': 'Zurich', ...this.options.properties };
+    const properties = {
+      'sn_atf.runner.enabled': 'true',
+      'glide.buildname': 'Zurich',
+      ...this.options.properties,
+    };
     for (const [name, value] of Object.entries(properties)) {
       rows.push({ table: 'sys_properties', fields: { sys_id: `prop-${name}`, name, value } });
     }
@@ -162,11 +185,21 @@ export class FakeInstance {
     const params = url.searchParams;
     const redirectUri = params.get('redirect_uri') ?? '';
     const clientId = params.get('client_id') ?? '';
-    if (this.options.oauthClients && !this.options.oauthClients.some((c) => c.clientId === clientId)) {
-      return new Response('Invalid client', { status: 400, headers: { 'content-type': 'text/plain' } });
+    if (
+      this.options.oauthClients &&
+      !this.options.oauthClients.some((c) => c.clientId === clientId)
+    ) {
+      return new Response('Invalid client', {
+        status: 400,
+        headers: { 'content-type': 'text/plain' },
+      });
     }
     const code = `code-${++this.counter}`;
-    this.authCodes.set(code, { clientId, redirectUri, challenge: params.get('code_challenge') ?? '' });
+    this.authCodes.set(code, {
+      clientId,
+      redirectUri,
+      challenge: params.get('code_challenge') ?? '',
+    });
     const target = new URL(redirectUri);
     target.searchParams.set('code', code);
     target.searchParams.set('state', params.get('state') ?? '');
@@ -178,7 +211,10 @@ export class FakeInstance {
     const clientId = form.get('client_id') ?? '';
     const clientSecret = form.get('client_secret') ?? '';
     const clients = this.options.oauthClients;
-    if (clients && !clients.some((c) => c.clientId === clientId && c.clientSecret === clientSecret)) {
+    if (
+      clients &&
+      !clients.some((c) => c.clientId === clientId && c.clientSecret === clientSecret)
+    ) {
       return json(401, { error: 'invalid_client', error_description: 'access_denied' });
     }
     const grant = form.get('grant_type');
@@ -186,15 +222,25 @@ export class FakeInstance {
       const code = this.authCodes.get(form.get('code') ?? '');
       const verifier = form.get('code_verifier') ?? '';
       const challenge = createHash('sha256').update(verifier).digest('base64url');
-      if (!code || code.redirectUri !== form.get('redirect_uri') || (code.challenge && code.challenge !== challenge)) {
-        return json(400, { error: 'invalid_grant', error_description: 'invalid authorization code' });
+      if (
+        !code ||
+        code.redirectUri !== form.get('redirect_uri') ||
+        (code.challenge && code.challenge !== challenge)
+      ) {
+        return json(400, {
+          error: 'invalid_grant',
+          error_description: 'invalid authorization code',
+        });
       }
       this.authCodes.delete(form.get('code')!);
       return this.issueTokens(true);
     }
     if (grant === 'refresh_token') {
       if (!this.refreshTokens.has(form.get('refresh_token') ?? '')) {
-        return json(401, { error: 'invalid_grant', error_description: 'refresh token is invalid or expired' });
+        return json(401, {
+          error: 'invalid_grant',
+          error_description: 'refresh token is invalid or expired',
+        });
       }
       return this.issueTokens(false);
     }
@@ -220,33 +266,53 @@ export class FakeInstance {
 
   private table(table: string, params: URLSearchParams): Response {
     if (this.options.forbiddenTables?.includes(table)) {
-      return json(403, { error: { message: 'User Not Authorized', detail: `ACL denied read on ${table}` }, status: 'failure' });
+      return json(403, {
+        error: { message: 'User Not Authorized', detail: `ACL denied read on ${table}` },
+        status: 'failure',
+      });
     }
     const rows = this.records.filter((r) => r.table === table).map((r) => r.fields);
-    const filtered = applyEncodedQuery(rows, params.get('sysparm_query'), { currentUserId: this.user.sysId });
+    const filtered = applyEncodedQuery(rows, params.get('sysparm_query'), {
+      currentUserId: this.user.sysId,
+    });
     const limit = Number(params.get('sysparm_limit') ?? '10000');
     const fields = params.get('sysparm_fields')?.split(',').filter(Boolean);
-    const result = filtered.slice(0, limit).map((row) =>
-      fields ? Object.fromEntries(fields.map((f) => [f, row[f] ?? ''])) : { ...row },
-    );
+    const result = filtered
+      .slice(0, limit)
+      .map((row) =>
+        fields ? Object.fromEntries(fields.map((f) => [f, row[f] ?? ''])) : { ...row },
+      );
     return json(200, { result });
   }
 
   private canUseCicd(): boolean {
-    return this.user.roles.includes('admin') || this.user.roles.includes('sn_cicd.sys_ci_automation');
+    return (
+      this.user.roles.includes('admin') || this.user.roles.includes('sn_cicd.sys_ci_automation')
+    );
   }
 
   private runSuite(params: URLSearchParams): Response {
     if (!this.canUseCicd()) {
-      return json(403, { error: { message: 'User Not Authorized', detail: 'Requires sn_cicd.sys_ci_automation' }, status: 'failure' });
+      return json(403, {
+        error: { message: 'User Not Authorized', detail: 'Requires sn_cicd.sys_ci_automation' },
+        status: 'failure',
+      });
     }
     const name = params.get('test_suite_name') ?? '';
     const suite = this.options.suites?.[name];
     if (!suite) {
-      return json(400, { error: { message: `Test suite not found: ${name}`, detail: '' }, status: 'failure' });
+      return json(400, {
+        error: { message: `Test suite not found: ${name}`, detail: '' },
+        status: 'failure',
+      });
     }
     const progressId = `progress${++this.counter}`;
-    this.runs.set(progressId, { suiteName: name, suite, polls: 0, resultsId: `result${this.counter}` });
+    this.runs.set(progressId, {
+      suiteName: name,
+      suite,
+      polls: 0,
+      resultsId: `result${this.counter}`,
+    });
     return json(200, {
       result: {
         links: { progress: { id: progressId, url: `/api/sn_cicd/progress/${progressId}` } },
@@ -279,7 +345,13 @@ export class FakeInstance {
     }
     if (run.polls <= (run.suite.pollsUntilDone ?? 1)) {
       return json(200, {
-        result: { links: { progress: progressLink }, status: '1', status_label: 'Running', percent_complete: 50, error: '' },
+        result: {
+          links: { progress: progressLink },
+          status: '1',
+          status_label: 'Running',
+          percent_complete: 50,
+          error: '',
+        },
       });
     }
     this.recordTestResults(run);
@@ -301,7 +373,12 @@ export class FakeInstance {
   }
 
   private recordTestResults(run: Run) {
-    if (this.records.some((r) => r.table === 'sys_atf_test_result' && r.fields.parent === run.resultsId)) return;
+    if (
+      this.records.some(
+        (r) => r.table === 'sys_atf_test_result' && r.fields.parent === run.resultsId,
+      )
+    )
+      return;
     for (const [i, test] of (run.suite.tests ?? []).entries()) {
       this.records.push({
         table: 'sys_atf_test_result',
@@ -337,5 +414,8 @@ export class FakeInstance {
 }
 
 function json(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json;charset=UTF-8' } });
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json;charset=UTF-8' },
+  });
 }

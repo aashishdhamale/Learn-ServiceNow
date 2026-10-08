@@ -26,7 +26,10 @@ export function scenarioContentHash(definition: Scenario): string {
  * Upserts a scenario, its objectives and its current version.
  * Returns the id of the ScenarioVersion row that attempts should reference.
  */
-export async function syncScenario(prisma: PrismaClient, scenario: LoadedScenario): Promise<string> {
+export async function syncScenario(
+  prisma: PrismaClient,
+  scenario: LoadedScenario,
+): Promise<string> {
   const definition = scenarioDefinition(scenario);
   const contentHash = scenarioContentHash(definition);
   const scenarioFields = {

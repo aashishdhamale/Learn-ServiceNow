@@ -13,11 +13,15 @@ describe('encodedQuery', () => {
         ],
         { orderByDesc: 'sys_updated_on' },
       ),
-    ).toBe('table=incident^scriptLIKEVipCallerAjax^nameINa,b^active=true^ORDERBYDESCsys_updated_on');
+    ).toBe(
+      'table=incident^scriptLIKEVipCallerAjax^nameINa,b^active=true^ORDERBYDESCsys_updated_on',
+    );
   });
 
   it('rejects values that would inject extra conditions', () => {
-    expect(() => encodedQuery([{ field: 'name', value: 'x^ORactive=true' }])).toThrow(EncodedQueryError);
+    expect(() => encodedQuery([{ field: 'name', value: 'x^ORactive=true' }])).toThrow(
+      EncodedQueryError,
+    );
   });
 
   it('rejects invalid field names', () => {

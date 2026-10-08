@@ -57,9 +57,9 @@ roles. Recent releases add access controls for client-callable Script Includes.
 
 ## Troubleshooting
 
-| What you see in layer 3 | What to do |
-|---|---|
-| *Test suite not found* | The suite name must match exactly: `Script Lab - VIP caller alert`. |
-| *ATF test execution is disabled* | Redo step 1. |
-| *Missing role for the CI/CD API* | Your user needs `admin` or `sn_cicd.sys_ci_automation`. |
-| Test fails with `VipCallerAjax is not defined` | The Script Include is missing, inactive, or not in Global. |
+| What you see in layer 3                        | What to do                                                          |
+| ---------------------------------------------- | ------------------------------------------------------------------- |
+| _Test suite not found_                         | The suite name must match exactly: `Script Lab - VIP caller alert`. |
+| _ATF test execution is disabled_               | Redo step 1.                                                        |
+| _Missing role for the CI/CD API_               | Your user needs `admin` or `sn_cicd.sys_ci_automation`.             |
+| Test fails with `VipCallerAjax is not defined` | The Script Include is missing, inactive, or not in Global.          |

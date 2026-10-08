@@ -87,7 +87,11 @@ export async function refreshTokens(
   refreshToken: string,
   now: () => Date = () => new Date(),
 ): Promise<TokenSet> {
-  const tokens = await requestTokens(config, { grant_type: 'refresh_token', refresh_token: refreshToken }, now);
+  const tokens = await requestTokens(
+    config,
+    { grant_type: 'refresh_token', refresh_token: refreshToken },
+    now,
+  );
   // ServiceNow may not rotate the refresh token; keep the old one when none comes back.
   return { ...tokens, refreshToken: tokens.refreshToken ?? refreshToken };
 }
@@ -97,7 +101,11 @@ async function requestTokens(
   form: Record<string, string>,
   now: () => Date,
 ): Promise<TokenSet> {
-  const http = new SnowHttp({ baseUrl: config.baseUrl, fetch: config.fetch, timeoutMs: config.timeoutMs });
+  const http = new SnowHttp({
+    baseUrl: config.baseUrl,
+    fetch: config.fetch,
+    timeoutMs: config.timeoutMs,
+  });
   const response = await http.request({
     method: 'POST',
     path: '/oauth_token.do',

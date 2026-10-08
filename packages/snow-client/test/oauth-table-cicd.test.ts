@@ -17,7 +17,13 @@ describe('OAuth authorization code flow', () => {
 
   it('builds an authorize URL with state and an S256 PKCE challenge', () => {
     const url = new URL(
-      buildAuthorizeUrl({ baseUrl: BASE, clientId: 'cid', redirectUri: 'http://localhost:3000/cb', state: 's1', codeChallenge: 'c1' }),
+      buildAuthorizeUrl({
+        baseUrl: BASE,
+        clientId: 'cid',
+        redirectUri: 'http://localhost:3000/cb',
+        state: 's1',
+        codeChallenge: 'c1',
+      }),
     );
     expect(url.pathname).toBe('/oauth_auth.do');
     expect(Object.fromEntries(url.searchParams)).toEqual({
@@ -34,13 +40,23 @@ describe('OAuth authorization code flow', () => {
     const fake = new FakeInstance({ oauthClients: [client] });
     const pkce = createPkcePair();
     const authorize = await fake.fetch(
-      buildAuthorizeUrl({ baseUrl: BASE, clientId: 'cid', redirectUri: 'http://app/cb', state: 'st', codeChallenge: pkce.challenge }),
+      buildAuthorizeUrl({
+        baseUrl: BASE,
+        clientId: 'cid',
+        redirectUri: 'http://app/cb',
+        state: 'st',
+        codeChallenge: pkce.challenge,
+      }),
     );
     const code = new URL(authorize.headers.get('location')!).searchParams.get('code')!;
     const config = { baseUrl: BASE, ...client, redirectUri: 'http://app/cb', fetch: fake.fetch };
     const now = () => new Date('2026-10-08T12:00:00Z');
 
-    const tokens = await exchangeAuthorizationCode(config, { code, codeVerifier: pkce.verifier }, now);
+    const tokens = await exchangeAuthorizationCode(
+      config,
+      { code, codeVerifier: pkce.verifier },
+      now,
+    );
     expect(tokens.refreshToken).toBeTruthy();
     expect(tokens.expiresAt.toISOString()).toBe('2026-10-08T12:29:59.000Z');
 
@@ -51,7 +67,13 @@ describe('OAuth authorization code flow', () => {
 
   it('surfaces token endpoint errors as SnowOAuthError', async () => {
     const fake = new FakeInstance({ oauthClients: [client] });
-    const config = { baseUrl: BASE, clientId: 'cid', clientSecret: 'wrong', redirectUri: 'http://app/cb', fetch: fake.fetch };
+    const config = {
+      baseUrl: BASE,
+      clientId: 'cid',
+      clientSecret: 'wrong',
+      redirectUri: 'http://app/cb',
+      fetch: fake.fetch,
+    };
     const error = await refreshTokens(config, 'whatever').catch((e: unknown) => e);
     expect(error).toBeInstanceOf(SnowOAuthError);
     expect(error).toMatchObject({ oauthError: 'invalid_client' });
@@ -61,14 +83,24 @@ describe('OAuth authorization code flow', () => {
 describe('Table API', () => {
   const fake = new FakeInstance({
     records: [
-      { table: 'sys_script_include', fields: { sys_id: 'a', name: 'One', active: 'true', script: 'x' } },
-      { table: 'sys_script_include', fields: { sys_id: 'b', name: 'Two', active: 'false', script: 'y' } },
+      {
+        table: 'sys_script_include',
+        fields: { sys_id: 'a', name: 'One', active: 'true', script: 'x' },
+      },
+      {
+        table: 'sys_script_include',
+        fields: { sys_id: 'b', name: 'Two', active: 'false', script: 'y' },
+      },
     ],
   });
   const snow = createSnowClient({ instance: 'dev1', tokens: staticTokens(), fetch: fake.fetch });
 
   it('lists records with query, fields and limit', async () => {
-    const rows = await snow.table.list('sys_script_include', { query: 'active=true', fields: ['sys_id', 'name'], limit: 5 });
+    const rows = await snow.table.list('sys_script_include', {
+      query: 'active=true',
+      fields: ['sys_id', 'name'],
+      limit: 5,
+    });
     expect(rows).toEqual([{ sys_id: 'a', name: 'One' }]);
     const request = fake.requests.at(-1)!;
     expect(new URLSearchParams(request.search).get('sysparm_exclude_reference_link')).toBe('true');
@@ -80,11 +112,15 @@ describe('Table API', () => {
       Response.json({ result: [{ manager: { value: 'abc', link: 'x' }, vip: true, note: null }] }),
     );
     const client = createSnowClient({ instance: 'dev1', tokens: staticTokens(), fetch: odd.fetch });
-    expect(await client.table.list('sys_user')).toEqual([{ manager: 'abc', vip: 'true', note: '' }]);
+    expect(await client.table.list('sys_user')).toEqual([
+      { manager: 'abc', vip: 'true', note: '' },
+    ]);
   });
 
   it('is read-only by construction', () => {
-    const methods = Object.getOwnPropertyNames(TableApi.prototype).filter((m) => m !== 'constructor');
+    const methods = Object.getOwnPropertyNames(TableApi.prototype).filter(
+      (m) => m !== 'constructor',
+    );
     expect(methods).toEqual(['list']);
   });
 
@@ -107,7 +143,12 @@ describe('CI/CD test suite API', () => {
         },
       },
     });
-    const snow = createSnowClient({ instance: 'dev1', tokens: staticTokens(), fetch: fake.fetch, sleep: recordingSleep().sleep });
+    const snow = createSnowClient({
+      instance: 'dev1',
+      tokens: staticTokens(),
+      fetch: fake.fetch,
+      sleep: recordingSleep().sleep,
+    });
 
     const started = await snow.cicd.runTestSuite({ name: 'My suite' });
     expect(started.state).toBe('PENDING');

@@ -25,6 +25,8 @@ describe('instanceBaseUrl', () => {
   });
 
   it('honours a test URL template', () => {
-    expect(instanceBaseUrl('dev1', 'http://127.0.0.1:4010/{instance}/')).toBe('http://127.0.0.1:4010/dev1');
+    expect(instanceBaseUrl('dev1', 'http://127.0.0.1:4010/{instance}/')).toBe(
+      'http://127.0.0.1:4010/dev1',
+    );
   });
 });

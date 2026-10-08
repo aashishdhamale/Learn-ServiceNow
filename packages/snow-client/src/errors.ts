@@ -70,7 +70,10 @@ export class SnowTimeoutError extends SnowError {
 }
 
 export class SnowAuthError extends SnowError {
-  constructor(message = 'Authentication with the instance failed or expired.', options: SnowErrorOptions = {}) {
+  constructor(
+    message = 'Authentication with the instance failed or expired.',
+    options: SnowErrorOptions = {},
+  ) {
     super('UNAUTHORIZED', message, { status: 401, ...options });
   }
 }
@@ -97,7 +100,10 @@ export class SnowRateLimitError extends SnowError {
   readonly retryAfterMs?: number;
 
   constructor(retryAfterMs?: number) {
-    super('RATE_LIMITED', 'The instance is rate limiting requests.', { status: 429, retriable: true });
+    super('RATE_LIMITED', 'The instance is rate limiting requests.', {
+      status: 429,
+      retriable: true,
+    });
     this.retryAfterMs = retryAfterMs;
   }
 }
