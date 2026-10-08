@@ -1,10 +1,11 @@
-import { config as loadEnv } from 'dotenv';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 
 // The e2e run uses its own database, a mock ServiceNow instance and mock AI review,
 // and a production build of the app on port 3100.
-loadEnv({ path: fileURLToPath(new URL('../../.env', import.meta.url)), quiet: true });
+const envFile = fileURLToPath(new URL('../../.env', import.meta.url));
+if (existsSync(envFile)) process.loadEnvFile(envFile); // never overrides variables already set
 
 const devDatabaseUrl =
   process.env.DATABASE_URL ?? 'postgresql://snow:snow@localhost:5432/snow_mastery?schema=public';

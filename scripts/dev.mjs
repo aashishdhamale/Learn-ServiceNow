@@ -20,7 +20,7 @@ function dockerAvailable() {
 
 const env = ensureEnv();
 
-if (env.SKIP_DOCKER === '1') {
+if ((process.env.SKIP_DOCKER ?? env.SKIP_DOCKER) === '1') {
   console.log('• SKIP_DOCKER=1: using DATABASE_URL as-is');
 } else if (dockerAvailable()) {
   run(
