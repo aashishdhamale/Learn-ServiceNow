@@ -110,9 +110,16 @@ export async function runAttempt(attemptId: string): Promise<void> {
     });
 
     const finishedAt = new Date();
+    // A deterministic layer that could not run means "not graded", not "failed".
+    const broken = report.layers.find((l) => l.layer !== 'REVIEW' && l.status === 'ERROR');
+    const problem = broken?.findings.find((f) => !f.passed);
     await prisma.attempt.update({
       where: { id: attemptId },
-      data: { status: report.passed ? 'PASSED' : 'FAILED', finishedAt },
+      data: {
+        status: report.passed ? 'PASSED' : broken ? 'ERROR' : 'FAILED',
+        errorMessage: problem ? [problem.title, problem.fix].filter(Boolean).join('. ') : undefined,
+        finishedAt,
+      },
     });
     if (report.passed)
       await markCompleted(attempt.userId, attempt.scenarioVersion.scenarioId, finishedAt);

@@ -159,5 +159,5 @@ Environment notes:
 - [x] M5 `ai` + layer 4 (architect review)
 - [x] M6 web: settings page, OAuth connect, token refresh, connection health
 - [x] M7 web: Script Lab catalog, scenario page with hints, Check my work, per-layer results
-- [ ] M8 web: progress dashboard by module
+- [x] M8 web: progress dashboard by module
 - [ ] M9 Playwright e2e, README PDI setup guide, Definition-of-Done pass
