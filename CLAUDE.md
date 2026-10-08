@@ -155,7 +155,7 @@ Environment notes:
 - [x] M1 `scenarios`: schema, loader, VIP caller alert content, correct/flawed fixtures, ATF setup
 - [x] M2 `snow-client`: HTTP core, errors, retries, OAuth, Table API, CI/CD API, health classifier
 - [x] M3 `grader` layers 1–2 (flawed fixture fails layer 2 with educational messages)
-- [ ] M4 `grader` layer 3 (ATF run/poll/results)
+- [x] M4 `grader` layer 3 (ATF run/poll/results)
 - [ ] M5 `ai` + layer 4 (architect review)
 - [ ] M6 web: settings page, OAuth connect, token refresh, connection health
 - [ ] M7 web: Script Lab catalog, scenario page with hints, Check my work, per-layer results

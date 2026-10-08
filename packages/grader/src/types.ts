@@ -13,9 +13,10 @@ export const LAYERS: readonly LayerName[] = ['STRUCTURE', 'STATIC', 'FUNCTIONAL'
 /**
  * PASSED/FAILED are verdicts. BLOCKED means the layer could not run for a reason the learner
  * can fix (e.g. ATF disabled) and counts as not passed. SKIPPED means there was nothing to
- * check and counts as passed. ERROR means the grader itself hit a problem.
+ * check and counts as passed. ERROR means the grader hit a problem talking to the PDI or a
+ * service. COMPLETED is for the coaching layer, which ran but gives no verdict.
  */
-export type LayerStatus = 'PASSED' | 'FAILED' | 'BLOCKED' | 'SKIPPED' | 'ERROR';
+export type LayerStatus = 'PASSED' | 'FAILED' | 'BLOCKED' | 'SKIPPED' | 'ERROR' | 'COMPLETED';
 
 export type Severity = 'error' | 'warning' | 'info';
 

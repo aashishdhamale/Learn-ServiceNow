@@ -63,6 +63,8 @@ enum LayerStatus {
   BLOCKED
   SKIPPED
   ERROR
+  /// Ran without a verdict (the coaching layer).
+  COMPLETED
 }
 
 enum Severity {
