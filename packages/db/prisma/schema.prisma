@@ -222,6 +222,7 @@ model Finding {
   targetName    String?
   line          Int?
   column        Int?
+  snippet       String?
   position      Int
 
   @@index([checkId])

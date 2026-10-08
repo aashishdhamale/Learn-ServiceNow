@@ -130,7 +130,7 @@ pnpm dev              # creates .env if missing, starts Postgres (docker compose
 pnpm test             # Vitest across all packages
 pnpm test:e2e         # Playwright happy path (mock ServiceNow + mock AI)
 pnpm lint | pnpm typecheck | pnpm format
-pnpm db:migrate       # prisma migrate dev
+pnpm db:migrate       # prisma migrate dev + generate (Prisma 7 no longer auto-generates)
 pnpm scenarios:validate
 pnpm scenarios:sync   # upsert scenario files into Scenario/ScenarioVersion rows
 ```
@@ -158,6 +158,6 @@ Environment notes:
 - [x] M4 `grader` layer 3 (ATF run/poll/results)
 - [x] M5 `ai` + layer 4 (architect review)
 - [x] M6 web: settings page, OAuth connect, token refresh, connection health
-- [ ] M7 web: Script Lab catalog, scenario page with hints, Check my work, per-layer results
+- [x] M7 web: Script Lab catalog, scenario page with hints, Check my work, per-layer results
 - [ ] M8 web: progress dashboard by module
 - [ ] M9 Playwright e2e, README PDI setup guide, Definition-of-Done pass

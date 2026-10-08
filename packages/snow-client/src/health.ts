@@ -264,7 +264,9 @@ function failedReachability(error: unknown, instance: string, checkedAt: string)
   const instanceOk = status === 'AUTH_EXPIRED' || status === 'MISSING_ACCESS';
   return {
     status,
-    headline: `${described.title}. ${described.message}`,
+    headline: described.message.startsWith(described.title)
+      ? described.message
+      : `${described.title}. ${described.message}`,
     action: described.action,
     checks: [
       {
