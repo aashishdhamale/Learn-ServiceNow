@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/lib/server/current-user';
 import { createAttempt, NotConnectedError, runAttempt } from '@/lib/server/grading';
 import { revealNextHint } from '@/lib/server/progress';
-import { getScenario } from '@/lib/server/scenarios';
+import { ensureScenarioVersion, getScenario } from '@/lib/server/scenarios';
 
 export interface CheckWorkState {
   error?: string;
@@ -35,6 +35,7 @@ export async function revealHintAction(scenarioId: string): Promise<void> {
   const scenario = getScenario(scenarioId);
   if (!scenario) return;
   const user = await getCurrentUser();
+  await ensureScenarioVersion(scenario); // progress rows reference the scenario row
   await revealNextHint(user.id, scenarioId, scenario.hints.length);
   revalidatePath(`/lab/${scenarioId}`);
 }
