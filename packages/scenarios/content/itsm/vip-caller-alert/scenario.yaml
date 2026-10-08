@@ -139,7 +139,7 @@ staticRules:
     id: uses-glideajax
     target: onChangeScript
     options:
-      constructor: GlideAjax
+      className: GlideAjax
       firstArgument: VipCallerAjax
     message: The client script never creates new GlideAjax('VipCallerAjax').
     why: GlideAjax is the supported way for a client script to ask a Script Include for data.
