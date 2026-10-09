@@ -4,10 +4,12 @@ import { fileURLToPath } from 'node:url';
 import { ensureEnv } from './ensure-env.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
+// On Windows pnpm is a .cmd shim, which Node can only start through a shell.
+const shell = process.platform === 'win32';
 
 function run(command, args, label) {
   console.log(`• ${label}`);
-  const result = spawnSync(command, args, { cwd: root, stdio: 'inherit' });
+  const result = spawnSync(command, args, { cwd: root, stdio: 'inherit', shell });
   if (result.status !== 0) {
     console.error(`✖ ${label} failed.`);
     process.exit(result.status ?? 1);
@@ -15,7 +17,7 @@ function run(command, args, label) {
 }
 
 function dockerAvailable() {
-  return spawnSync('docker', ['compose', 'version'], { stdio: 'ignore' }).status === 0;
+  return spawnSync('docker', ['compose', 'version'], { stdio: 'ignore', shell }).status === 0;
 }
 
 const env = ensureEnv();
@@ -42,6 +44,7 @@ run(
 const web = spawn('pnpm', ['--filter', '@snow-mastery/web', 'dev'], {
   cwd: root,
   stdio: 'inherit',
+  shell,
 });
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => web.kill(signal));
 web.on('exit', (code) => process.exit(code ?? 0));

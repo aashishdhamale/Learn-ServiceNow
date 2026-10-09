@@ -19,6 +19,7 @@ export default async function globalSetup() {
     cwd: fileURLToPath(new URL('../../../packages/db', import.meta.url)),
     env: { ...process.env, DATABASE_URL: e2eDatabaseUrl },
     stdio: 'inherit',
+    shell: process.platform === 'win32', // pnpm is a .cmd shim on Windows
   });
 
   const client = new pg.Client({ connectionString: e2eDatabaseUrl });
